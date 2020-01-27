@@ -27,9 +27,12 @@ class CityscapesDataset(Dataset):
         self.ignore_index = ignore_index
         self.split = 'val' if split == 'valid' else split
 
-        self.img_paths = sorted(self.base_dir.glob(f'leftImg8bit/{self.split}/*/*leftImg8bit.png'))
+        # self.img_paths = sorted(self.base_dir.glob(f'leftImg8bit/{self.split}/*/*leftImg8bit.png'))
+        self.img_paths = sorted(self.base_dir.glob(f'kawaramachi/{self.split}/*.png'))
         self.lbl_paths = sorted(self.base_dir.glob(f'gtFine/{self.split}/*/*gtFine_labelIds.png'))
-        assert len(self.img_paths) == len(self.lbl_paths)
+        print(len(self.img_paths))
+        print(len(self.lbl_paths))
+        # assert len(self.img_paths) == len(self.lbl_paths)
 
         # Resize
         if isinstance(target_size, str):
@@ -70,11 +73,11 @@ class CityscapesDataset(Dataset):
                 img = resized['image']
             img = img.transpose(2, 0, 1)
             img = torch.FloatTensor(img)
-            return img
+            return img, img_path.stem
         else:
-            lbl_path = self.lbl_paths[index]
-            lbl = np.array(Image.open(lbl_path))
-            lbl = self.encode_mask(lbl)
+            # lbl_path = self.lbl_paths[index]
+            # lbl = np.array(Image.open(lbl_path))
+            # lbl = self.encode_mask(lbl)
             # ImageAugment (RandomBrightness, AddNoise...)
             if self.image_augmenter:
                 augmented = self.image_augmenter(image=img)
@@ -86,21 +89,50 @@ class CityscapesDataset(Dataset):
             else:
                 img = minmax_normalize(img, norm_range=(-1, 1))
             if self.resizer:
-                resized = self.resizer(image=img, mask=lbl)
-                img, lbl = resized['image'], resized['mask']
+                resized = self.resizer(image=img)
+                img = resized['image']
             # AffineAugment (Horizontal Flip, Rotate...)
             if self.affine_augmenter:
-                augmented = self.affine_augmenter(image=img, mask=lbl)
-                img, lbl = augmented['image'], augmented['mask']
+                augmented = self.affine_augmenter(image=img)
+                img = augmented['image']
 
             if self.debug:
-                print(lbl_path)
-                print(np.unique(lbl))
+                print()
+                # print(np.unique(lbl))
             else:
                 img = img.transpose(2, 0, 1)
                 img = torch.FloatTensor(img)
-                lbl = torch.LongTensor(lbl)
-            return img, lbl, img_path.stem
+                # lbl = torch.LongTensor(lbl)
+            return img, img_path.stem
+
+            # lbl = np.array(Image.open(lbl_path))
+            # lbl = self.encode_mask(lbl)
+            # # ImageAugment (RandomBrightness, AddNoise...)
+            # if self.image_augmenter:
+            #     augmented = self.image_augmenter(image=img)
+            #     img = augmented['image']
+            # # Resize (Scale & Pad & Crop)
+            # if self.net_type == 'unet':
+            #     img = minmax_normalize(img)
+            #     img = meanstd_normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            # else:
+            #     img = minmax_normalize(img, norm_range=(-1, 1))
+            # if self.resizer:
+            #     resized = self.resizer(image=img, mask=lbl)
+            #     img, lbl = resized['image'], resized['mask']
+            # # AffineAugment (Horizontal Flip, Rotate...)
+            # if self.affine_augmenter:
+            #     augmented = self.affine_augmenter(image=img, mask=lbl)
+            #     img, lbl = augmented['image'], augmented['mask']
+            #
+            # if self.debug:
+            #     print(lbl_path)
+            #     print(np.unique(lbl))
+            # else:
+            #     img = img.transpose(2, 0, 1)
+            #     img = torch.FloatTensor(img)
+            #     lbl = torch.LongTensor(lbl)
+            # return img, lbl, img_path.stem
 
     def encode_mask(self, lbl):
         for c in self.void_classes:
