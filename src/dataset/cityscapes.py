@@ -19,7 +19,7 @@ class CityscapesDataset(Dataset):
 
     def __init__(self, base_dir='../data/cityscapes', split='train',
                  affine_augmenter=None, image_augmenter=None, target_size=(1024, 2048),
-                 net_type='unet', ignore_index=255, debug=False):
+                 net_type='unet', ignore_index=255, debug=False, num=1):
         self.debug = debug
         self.base_dir = Path(base_dir)
         assert net_type in ['unet', 'deeplab']
@@ -27,11 +27,8 @@ class CityscapesDataset(Dataset):
         self.ignore_index = ignore_index
         self.split = 'val' if split == 'valid' else split
 
-        # self.img_paths = sorted(self.base_dir.glob(f'leftImg8bit/{self.split}/*/*leftImg8bit.png'))
-        self.img_paths = sorted(self.base_dir.glob(f'kawaramachi/{self.split}/*.png'))
+        self.img_paths = sorted(self.base_dir.glob(f'kyoto-city-images/{self.split}/*.png'))
         self.lbl_paths = sorted(self.base_dir.glob(f'gtFine/{self.split}/*/*gtFine_labelIds.png'))
-        print(len(self.img_paths))
-        print(len(self.lbl_paths))
         # assert len(self.img_paths) == len(self.lbl_paths)
 
         # Resize
@@ -98,41 +95,10 @@ class CityscapesDataset(Dataset):
 
             if self.debug:
                 print()
-                # print(np.unique(lbl))
             else:
                 img = img.transpose(2, 0, 1)
                 img = torch.FloatTensor(img)
-                # lbl = torch.LongTensor(lbl)
             return img, img_path.stem
-
-            # lbl = np.array(Image.open(lbl_path))
-            # lbl = self.encode_mask(lbl)
-            # # ImageAugment (RandomBrightness, AddNoise...)
-            # if self.image_augmenter:
-            #     augmented = self.image_augmenter(image=img)
-            #     img = augmented['image']
-            # # Resize (Scale & Pad & Crop)
-            # if self.net_type == 'unet':
-            #     img = minmax_normalize(img)
-            #     img = meanstd_normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            # else:
-            #     img = minmax_normalize(img, norm_range=(-1, 1))
-            # if self.resizer:
-            #     resized = self.resizer(image=img, mask=lbl)
-            #     img, lbl = resized['image'], resized['mask']
-            # # AffineAugment (Horizontal Flip, Rotate...)
-            # if self.affine_augmenter:
-            #     augmented = self.affine_augmenter(image=img, mask=lbl)
-            #     img, lbl = augmented['image'], augmented['mask']
-            #
-            # if self.debug:
-            #     print(lbl_path)
-            #     print(np.unique(lbl))
-            # else:
-            #     img = img.transpose(2, 0, 1)
-            #     img = torch.FloatTensor(img)
-            #     lbl = torch.LongTensor(lbl)
-            # return img, lbl, img_path.stem
 
     def encode_mask(self, lbl):
         for c in self.void_classes:
@@ -147,18 +113,14 @@ if __name__ == '__main__':
 
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from utils.custum_aug import Rotate
 
     affine_augmenter = albu.Compose([albu.HorizontalFlip(p=.5),
                                      # Rotate(5, p=.5)
                                      ])
-    # image_augmenter = albu.Compose([albu.GaussNoise(p=.5),
-    #                                 albu.RandomBrightnessContrast(p=.5)])
     image_augmenter = None
     dataset = CityscapesDataset(split='train', net_type='deeplab', ignore_index=19, debug=True,
                                 affine_augmenter=affine_augmenter, image_augmenter=image_augmenter)
     dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
-    print(len(dataset))
 
     for i, batched in enumerate(dataloader):
         images, labels, _ = batched

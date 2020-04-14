@@ -1,3 +1,20 @@
+# Semantic segmentation from video
+## How to use 
+1. Create conda environment
+`conda env create -f env.yaml`
+`conda activate pytorch-seg`
+2. Place your video in `src/`
+3. Replace [video] by your video name in `vid2seg.sh`, INPUT_VIDEO_PATH=[video]
+4. Download model from https://drive.google.com/open?id=1grBwQ6g1UACoVGRI7MdBqyf8zNLlD3Yv and place it in `cityscapes_deeplab_v3_plus/model/`.
+5. Run a script
+`cd src/`
+`bash vid2seg.sh` 
+
+# Generate segmented images from movie
+## Create conda environment
+以下のコマンドで、仮想環境を作成。
+`conda env create -f env.yaml` 
+
 # PytorchSegmentation
 This repository implements general network for semantic segmentation.  
 You can train various networks like DeepLabV3+, PSPNet, UNet, etc., just by writing the config file.
